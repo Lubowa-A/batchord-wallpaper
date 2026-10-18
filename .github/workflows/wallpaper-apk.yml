@@ -1,0 +1,43 @@
+name: Wallpaper APK
+
+# Builds the Android dev debug APK on every push to main, so the
+# Wallpapers feature can be installed and tested on a phone.
+on:
+  push:
+    branches: [main]
+  workflow_dispatch:
+
+concurrency:
+  group: wallpaper-apk-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  android:
+    name: Android dev debug APK
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Set up JDK 17
+        uses: actions/setup-java@v4
+        with:
+          java-version: '17'
+          distribution: 'temurin'
+
+      - uses: gradle/actions/setup-gradle@v4
+
+      - name: Write local.properties
+        run: |
+          echo "LASTFM_API_KEY=" > local.properties
+          echo "LASTFM_SECRET=" >> local.properties
+
+      - run: chmod +x gradlew
+
+      - name: Build the dev APK
+        run: ./gradlew assembleDevDebug --stacktrace
+
+      - name: Upload the dev APK
+        uses: actions/upload-artifact@v4
+        with:
+          name: bitchord-dev-debug
+          path: app/build/outputs/apk/dev/debug/*.apk
